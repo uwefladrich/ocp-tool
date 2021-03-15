@@ -4,7 +4,7 @@ import numpy as np
 EARTH_RADIUS = 6371 * 10^3 # m
 
 
-class GaussianReducedGrid:
+class ReducedGaussianGrid:
 
     def __init__(self, nlats, lats, nlons):
         self.nlats = nlats # int
