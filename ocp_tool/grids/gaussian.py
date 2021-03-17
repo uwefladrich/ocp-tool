@@ -37,7 +37,7 @@ class ReducedGaussianGrid:
         return longitudes
 
     def cell_corners(self): # float[self.size, 4]
-        corners = np.empty([self.size,4,2])
+        corners = np.empty([2, 4, self.size])
         cell_idx = 0
         for i, (lat,nlon) in enumerate(zip(self.lats, self.nlons)):
             lat_n = (self.lats[i-1]+lat)/2 if i>0 else (lat+90)/2
@@ -61,10 +61,10 @@ class ReducedGaussianGrid:
                 assert -180 < lon_e <= 180
                 lon_w = lon-dlon if lon-dlon<=180 else lon-dlon-360
                 assert -180 < lon_w <= 180
-                corners[cell_idx,0,:] = [lat_n, lon_e]
-                corners[cell_idx,1,:] = [lat_n, lon_w]
-                corners[cell_idx,2,:] = [lat_n, lon_w]
-                corners[cell_idx,3,:] = [lat_s, lon_e]
+                corners[:, 0, cell_idx] = [lat_n, lon_e]
+                corners[:, 1, cell_idx] = [lat_n, lon_w]
+                corners[:, 2, cell_idx] = [lat_n, lon_w]
+                corners[:, 3, cell_idx] = [lat_s, lon_e]
                 cell_idx += 1
         assert cell_idx == self.size
         return corners

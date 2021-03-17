@@ -65,12 +65,12 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
 
             if two_dim:
                 assert corners.ndim == 4
-                cla_id[:,:,:] = corners[:,:,:,0]
-                clo_id[:,:,:] = corners[:,:,:,1]
+                cla_id[:,:,:] = np.transpose(corners[0, :, :, :], axes=(0, 2, 1))
+                clo_id[:,:,:] = np.transpose(corners[1, :, :, :], axes=(0, 2, 1))
             else:
                 assert corners.ndim == 3
-                cla_id[:,0,:] = corners[:,:,0]
-                clo_id[:,0,:] = corners[:,:,1]
+                cla_id[:,0,:] = corners[0, :, :]
+                clo_id[:,0,:] = corners[1, :, :]
 
 def write_area(name, areas, path=None, append=True):
 
