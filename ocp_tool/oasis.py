@@ -99,3 +99,32 @@ def write_area(name, areas, path=None, append=True):
 
         areas_id = get_var(nc, areas_v, 'float64', (y_d, x_d))
         areas_id[:,:] = areas.T if two_dim else [areas]
+
+
+def write_mask(name, masks, path=None, append=True):
+
+    if masks.ndim not in (1,2):
+        raise ValueError('Invalid dimensions, must be one or two dimensional')
+
+    two_dim = masks.ndim == 2
+
+    x_n = masks.shape[0]
+    y_n = masks.shape[1] if two_dim else 1
+
+    x_d = f'{name}_x'
+    y_d = f'{name}_y'
+
+    masks_v = f'{name}.msk'
+
+    with NCDataset(
+            os.path.join(path or '', 'masks.nc'),
+            mode='r+' if append else 'w'
+         ) as nc:
+
+        if x_d not in nc.dimensions:
+            nc.createDimension(x_d, x_n)
+        if y_d not in nc.dimensions:
+            nc.createDimension(y_d, y_n)
+
+        masks_id = get_var(nc, masks_v, 'int32', (y_d, x_d))
+        masks_id[:,:] = masks.T if two_dim else [masks]
