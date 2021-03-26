@@ -63,7 +63,7 @@ class ReducedGaussianGrid:
                 assert -180 < lon_w <= 180
                 corners[:, 0, cell_idx] = [lat_n, lon_e]
                 corners[:, 1, cell_idx] = [lat_n, lon_w]
-                corners[:, 2, cell_idx] = [lat_n, lon_w]
+                corners[:, 2, cell_idx] = [lat_s, lon_w]
                 corners[:, 3, cell_idx] = [lat_s, lon_e]
                 cell_idx += 1
         assert cell_idx == self.size
