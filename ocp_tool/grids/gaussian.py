@@ -1,7 +1,82 @@
 import numpy as np
 
 
-EARTH_RADIUS = 6371 * 10^3 # m
+EARTH_RADIUS = 6371e6  # m
+
+
+def latband_borders(lats):
+    borders = np.empty(len(lats)+1)
+    borders[0] = 90  # north pole
+    borders[-1] = -90  # south pole
+    borders[1:-1] = (lats[:-1]+lats[1:])/2
+    return borders
+
+
+def latband_areas(lats):
+    sine = np.sin(
+        np.radians(
+            latband_borders(lats)
+        )
+    )
+    return 2*np.pi*EARTH_RADIUS**2*(sine[:-1]-sine[1:])
+
+
+def longitudes(nlons):
+    return np.linspace(0, 360, nlons+1)[:-1]
+
+
+def longitude_borders(nlons):
+    borders = np.linspace(0, 360, 2*nlons+1)[:-1][1::2]
+    borders = np.insert(borders, 0, -borders[0])
+    return borders
+
+
+class GaussianGrid:
+
+    def __init__(self, lats):
+        self.lats = np.array(lats)
+        self.nlats = len(self.lats)
+        self.nlons = 2*self.nlats
+
+    def cell_latitudes(self):
+        return np.tile(self.lats, (self.nlons, 1)).T
+
+    def cell_longitudes(self):
+        return np.tile(longitudes(self.nlons), (self.nlats, 1))
+
+    def cell_corners(self):
+        '''
+        Corner layout:
+        +---------------> i
+        |  1 ---------- 0
+        |  |            |
+        |  |            |
+        |  |            |
+        |  2 -----------3
+        v
+        j
+        '''
+        border_lats = latband_borders(self.lats)
+        c_lat = np.empty((4, self.nlats, self.nlons))
+        c_lat[0, :, :] = np.tile(border_lats[:-1], (self.nlons, 1)).T  # north
+        c_lat[1, :, :] = np.tile(border_lats[:-1], (self.nlons, 1)).T  # north
+        c_lat[2, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
+        c_lat[3, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
+
+        border_lons = longitude_borders(self.nlons)
+        c_lon = np.empty((4, self.nlats, self.nlons))
+        c_lon[0, :, :] = np.tile(border_lons[1:], (self.nlats, 1))  # east
+        c_lon[1, :, :] = np.tile(border_lons[:-1], (self.nlats, 1))  # west
+        c_lon[2, :, :] = np.tile(border_lons[:-1], (self.nlats, 1))  # east
+        c_lon[3, :, :] = np.tile(border_lons[1:], (self.nlats, 1))  # west
+
+        return np.array([c_lat, c_lon])
+
+    def cell_areas(self):
+        return np.tile(
+            latband_areas(self.lats)/self.nlons,
+            (self.nlons, 1)
+        )
 
 
 class ReducedGaussianGrid:
