@@ -3,18 +3,20 @@ import os
 import numpy as np
 from netCDF4 import Dataset as NCDataset
 
+
 def get_var(nc, name, type_, dim):
     if name not in nc.variables:
         return nc.createVariable(name, type_, dim)
     else:
         return nc.variables[name]
 
+
 def write_grid(name, lats, lons, corners=None, path=None, append=True):
 
     if lats.shape != lons.shape:
         raise ValueError('Mismatch between lat and lon dimensions')
 
-    if lats.ndim not in (1,2):
+    if lats.ndim not in (1, 2):
         raise ValueError('Invalid dimensions, must be one or two dimensional')
 
     two_dim = lats.ndim == 2
@@ -44,12 +46,12 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
         lat_id = get_var(nc, lat_v, 'float64', (y_d, x_d))
         lat_id.units = 'degrees_north'
         lat_id.standard_name = 'Latitude'
-        lat_id[:,:] = lats.T if two_dim else [lats]
+        lat_id[:, :] = lats.T if two_dim else [lats]
 
         lon_id = get_var(nc, lon_v, 'float64', (y_d, x_d))
         lon_id.units = 'degrees_east'
         lon_id.standard_name = 'Longitude'
-        lon_id[:,:] = lons.T if two_dim else [lons]
+        lon_id[:, :] = lons.T if two_dim else [lons]
 
         if corners is not None:
             if c_d not in nc.dimensions:
@@ -65,16 +67,17 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
 
             if two_dim:
                 assert corners.ndim == 4
-                cla_id[:,:,:] = np.transpose(corners[0, :, :, :], axes=(0, 2, 1))
-                clo_id[:,:,:] = np.transpose(corners[1, :, :, :], axes=(0, 2, 1))
+                cla_id[...] = np.transpose(corners[0, ...], axes=(0, 2, 1))
+                clo_id[...] = np.transpose(corners[1, ...], axes=(0, 2, 1))
             else:
                 assert corners.ndim == 3
-                cla_id[:,0,:] = corners[0, :, :]
-                clo_id[:,0,:] = corners[1, :, :]
+                cla_id[:, 0, :] = corners[0, ...]
+                clo_id[:, 0, :] = corners[1, ...]
+
 
 def write_area(name, areas, path=None, append=True):
 
-    if areas.ndim not in (1,2):
+    if areas.ndim not in (1, 2):
         raise ValueError('Invalid dimensions, must be one or two dimensional')
 
     two_dim = areas.ndim == 2
@@ -98,12 +101,12 @@ def write_area(name, areas, path=None, append=True):
             nc.createDimension(y_d, y_n)
 
         areas_id = get_var(nc, areas_v, 'float64', (y_d, x_d))
-        areas_id[:,:] = areas.T if two_dim else [areas]
+        areas_id[:, :] = areas.T if two_dim else [areas]
 
 
 def write_mask(name, masks, path=None, append=True):
 
-    if masks.ndim not in (1,2):
+    if masks.ndim not in (1, 2):
         raise ValueError('Invalid dimensions, must be one or two dimensional')
 
     two_dim = masks.ndim == 2
@@ -127,4 +130,4 @@ def write_mask(name, masks, path=None, append=True):
             nc.createDimension(y_d, y_n)
 
         masks_id = get_var(nc, masks_v, 'int32', (y_d, x_d))
-        masks_id[:,:] = masks.T if two_dim else [masks]
+        masks_id[:, :] = masks.T if two_dim else [masks]

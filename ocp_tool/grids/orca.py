@@ -48,28 +48,28 @@ class ORCA:
         if not _grid_supported(grid):
             raise ValueError(f'Invalid NEMO grid: {grid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'gphi{grid}'][0,:,:].T.data
+            return nc.variables[f'gphi{grid}'][0, :, :].T.data
 
     def cell_longitudes(self, grid='t'):
         if not _grid_supported(grid):
             raise ValueError(f'Invalid NEMO grid: {grid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'glam{grid}'][0,:,:].T.data
+            return nc.variables[f'glam{grid}'][0, :, :].T.data
 
     def cell_areas(self, grid='t'):
         if not _grid_supported(grid):
             raise ValueError(f'Invalid NEMO grid: {grid}')
         with Dataset(self.file, mode='r') as nc:
             return \
-                nc.variables[f'e1{grid}'][0,:,:].T.data \
-                * nc.variables[f'e2{grid}'][0,:,:].T.data
+                nc.variables[f'e1{grid}'][0, :, :].T.data \
+                * nc.variables[f'e2{grid}'][0, :, :].T.data
 
     def cell_masks(self, grid='t'):
         if not _grid_supported(grid):
             raise ValueError(f'Invalid NEMO grid: {grid}')
         with Dataset(self.file, mode='r') as nc:
-            if grid=='t':
-                return nc.variables['top_level'][0,:,:].T.data
+            if grid == 't':
+                return nc.variables['top_level'][0, :, :].T.data
             else:
                 raise NotImplementedError(
                     'Masks only implemented for T-grid so far'
@@ -91,15 +91,15 @@ class ORCA:
             |
             +------------> j
             '''
-            if grid=='t':
-                lats = nc.variables[f'gphif'][0,:,:].T.data
-                lons = nc.variables[f'glamf'][0,:,:].T.data
-            elif grid=='u':
-                lats = nc.variables[f'gphiv'][0,:,:].T.data
-                lons = nc.variables[f'glamv'][0,:,:].T.data
-            elif grid=='v':
-                lats = nc.variables[f'gphiu'][0,:,:].T.data
-                lons = nc.variables[f'glamu'][0,:,:].T.data
+            if grid == 't':
+                lats = nc.variables['gphif'][0, :, :].T.data
+                lons = nc.variables['glamf'][0, :, :].T.data
+            elif grid == 'u':
+                lats = nc.variables['gphiv'][0, :, :].T.data
+                lons = nc.variables['glamv'][0, :, :].T.data
+            elif grid == 'v':
+                lats = nc.variables['gphiu'][0, :, :].T.data
+                lons = nc.variables['glamu'][0, :, :].T.data
             else:
                 raise NotImplementedError(
                      'ORCA corners implemented for t/u/v-grids only'
@@ -108,7 +108,7 @@ class ORCA:
         assert lats.shape == lons.shape
 
         corners = np.zeros((2, 4, *lats.shape))
-        corners[:, 0, :,:] = [lats[:,:], lons[:,:]]
+        corners[:, 0, :, :] = [lats[:, :], lons[:, :]]
         corners[:, 1, 1:, :] = [lats[:-1, :], lons[:-1, :]]
         corners[:, 2, 1:, 1:] = [lats[:-1, :-1], lons[:-1, :-1]]
         corners[:, 3, :, 1:] = [lats[:, :-1], lons[:, :-1]]

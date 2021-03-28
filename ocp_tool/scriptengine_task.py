@@ -9,7 +9,6 @@ from ocp_tool.grib import read as grib_read
 
 try:
     from scriptengine.tasks.core import Task, timed_runner
-    from scriptengine.exceptions import ScriptEngineTaskRunError
 except (ModuleNotFoundError, ImportError) as e:
     logging.warning(
         'The ScriptEngine module could not be loaded, which means '
@@ -48,6 +47,8 @@ else:
             )
             self.log_debug(f'NEMO grid type: {type(nemo_grid)}')
 
+            rnfm_grid = grid_factory('F128')
+
             oasis_grid_names = {
                 'TQ21': 'F016',
                 'TL159': 'N080',
@@ -67,6 +68,12 @@ else:
                 corners=oifs_grid.cell_corners(),
                 append=False
             )
+            write_grid(
+                name='RnfA',
+                lats=rnfm_grid.cell_latitudes(),
+                lons=rnfm_grid.cell_longitudes(),
+                corners=rnfm_grid.cell_corners()
+            )
             for subgrid in ('t', 'u', 'v'):
                 write_grid(
                     name=oasis_grid_names[nemo_grid.name+subgrid],
@@ -82,6 +89,10 @@ else:
                 areas=oifs_grid.cell_areas(),
                 append=False
             )
+            write_area(
+                name='RnfA',
+                areas=rnfm_grid.cell_areas()
+            )
             for subgrid in ('t', 'u', 'v'):
                 write_area(
                     name=oasis_grid_names[nemo_grid.name+subgrid],
@@ -95,7 +106,7 @@ else:
                 ('lsm', 'cl')
             )
             oifs_lsm = np.where(
-                np.logical_or(data['lsm']>0.5, data['cl']>0.5), 1, 0
+                np.logical_or(data['lsm'] > 0.5, data['cl'] > 0.5), 1, 0
             )
             self.log_debug('Writing OASIS masks.nc file...')
             write_mask(
