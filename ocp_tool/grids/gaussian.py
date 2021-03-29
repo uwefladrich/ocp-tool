@@ -5,6 +5,12 @@ EARTH_RADIUS = 6371e6  # m
 
 
 def latband_borders(lats):
+    '''Expects a numpy array with center latitudes and returns a numpy array
+    of length len(lats)+1 with latitudes of borders between bands as mean of
+    the center latitudes. North and south poles are included as first and
+    last border, respectively. Everything is expected and computed in degrees
+    with north pole at 90 and south pole at -90.
+    '''
     borders = np.empty(len(lats)+1)
     borders[0] = 90  # north pole
     borders[-1] = -90  # south pole
@@ -13,6 +19,10 @@ def latband_borders(lats):
 
 
 def latband_areas(lats):
+    '''Expects a numpy array with center latitudes and returns a numpy array
+    with areas of the latitude bands as defined by borders returned from
+    latband_borders().
+    '''
     sine = np.sin(
         np.radians(
             latband_borders(lats)
@@ -21,18 +31,28 @@ def latband_areas(lats):
     return 2*np.pi*EARTH_RADIUS**2*(sine[:-1]-sine[1:])
 
 
-def longitudes(nlons):
+def equidist_lons(nlons):
+    '''Returns a numpy array with longitudes (degrees east) spaced equally
+    around the globe and including the prime meridian as first element.
+    '''
     return np.linspace(0, 360, nlons+1)[:-1]
 
 
-def longitude_borders(nlons):
-    borders = np.linspace(0, 360, 2*nlons+1)[:-1][1::2]
+def equidist_lon_borders(nlon):
+    '''Returns a numpy array with nlon+1 longitude borders for longitude
+    bands defined by the equidist distribution of nlons cells (see
+    equidist_lons()). The first border -dlon = -360/nlon, i.e. west of the
+    prime meridian.
+    '''
+    borders = np.linspace(0, 360, 2*nlon+1)[:-1][1::2]
     borders = np.insert(borders, 0, -borders[0])
     return borders
 
 
 class GaussianGrid:
-
+    '''A full Gaussian grid defined by a list of latitude bands and
+    equidistributed longitude bands.
+    '''
     def __init__(self, lats):
         self.lats = np.array(lats)
         self.nlats = len(self.lats)
@@ -42,7 +62,7 @@ class GaussianGrid:
         return np.tile(self.lats, (self.nlons, 1)).T
 
     def cell_longitudes(self):
-        return np.tile(longitudes(self.nlons), (self.nlats, 1))
+        return np.tile(equidist_lons(self.nlons), (self.nlats, 1))
 
     def cell_corners(self):
         '''
@@ -63,7 +83,7 @@ class GaussianGrid:
         c_lat[2, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
         c_lat[3, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
 
-        border_lons = longitude_borders(self.nlons)
+        border_lons = equidist_lon_borders(self.nlons)
         c_lon = np.empty((4, self.nlats, self.nlons))
         c_lon[0, :, :] = np.tile(border_lons[1:], (self.nlats, 1))  # east
         c_lon[1, :, :] = np.tile(border_lons[:-1], (self.nlats, 1))  # west
@@ -80,78 +100,61 @@ class GaussianGrid:
 
 
 class ReducedGaussianGrid:
-
-    def __init__(self, nlats, lats, nlons):
-        self.nlats = nlats  # int
-        self.lats = lats  # float[nlats]
-        self.nlons = nlons  # int[nlats]
-        assert nlats == len(lats) == len(nlons)
-        self.dlons = (360/nl for nl in nlons)
+    '''An reduced Gaussian Grid, defined by a list of latitude bands and a
+    number of equidistant lonitude segments for each latitude band.
+    '''
+    def __init__(self, lats, nlons):
+        if len(lats) != len(nlons):
+            raise ValueError(
+                'Arrays "lats" and "nlons" do not match in size'
+            )
+        self.lats = np.array(lats)
+        self.nlons = np.array(nlons)
         self.size = sum(self.nlons)
 
     def cell_latitudes(self):  # float[self.size]
-        latitudes = np.array(
-            [
-                lat for sub in (
-                    ((l,)*n for l, n in zip(self.lats, self.nlons))
-                ) for lat in sub
-            ],
-            dtype=np.float64
-        )
+        latitudes = np.empty(0)
+        for lat, nlon in zip(self.lats, self.nlons):
+            latitudes = np.append(latitudes, np.repeat(lat, nlon))
         assert len(latitudes) == self.size
         return latitudes
 
     def cell_longitudes(self):  # float[self.size]
-        longitudes = np.array(
-            [
-                360*i/nlon for nlon in self.nlons for i in range(nlon)
-            ],
-            dtype=np.float64
-        )
+        longitudes = np.empty(0)
+        for nlon in self.nlons:
+            longitudes = np.append(longitudes, equidist_lons(nlon))
         assert len(longitudes) == self.size
         return longitudes
 
     def cell_corners(self):  # float[self.size, 4]
-        corners = np.empty([2, 4, self.size])
-        cell_idx = 0
-        for i, (lat, nlon) in enumerate(zip(self.lats, self.nlons)):
-            lat_n = (self.lats[i-1]+lat)/2 if i > 0 else (lat+90)/2
-            assert -90 < lat_n < 90
-            lat_s = (self.lats[i+1]+lat)/2 if i < self.nlats-1 else (lat-90)/2
-            assert -90 < lat_s < 90
-            dlon = 180/nlon
-            for lon in (i*360/nlon for i in range(nlon)):
-                '''
-                Corner layout:
-                y
-                ^  2 ---------- 1
-                |  |            |
-                |  |            |
-                |  |            |
-                |  3 -----------4
-                |
-                +---------------> x
-                '''
-                lon_e = lon+dlon if lon+dlon <= 180 else lon+dlon-360
-                assert -180 < lon_e <= 180
-                lon_w = lon-dlon if lon-dlon <= 180 else lon-dlon-360
-                assert -180 < lon_w <= 180
-                corners[:, 0, cell_idx] = [lat_n, lon_e]
-                corners[:, 1, cell_idx] = [lat_n, lon_w]
-                corners[:, 2, cell_idx] = [lat_s, lon_w]
-                corners[:, 3, cell_idx] = [lat_s, lon_e]
-                cell_idx += 1
-        assert cell_idx == self.size
+        '''
+        Corner layout:
+        +---------------> i
+        |  1 ---------- 0
+        |  |            |
+        |  |            |
+        |  |            |
+        |  2 -----------3
+        v
+        j
+        '''
+        corners = np.empty((2, 4, self.size))
+        ii = 0
+        brdlats = latband_borders(self.lats)
+        for lat_n, lat_s, nlons in zip(brdlats[:-1], brdlats[1:], self.nlons):
+            brdlons = equidist_lon_borders(nlons)
+            for lon_e, lon_w in zip(brdlons[:-1], brdlons[1:]):
+                corners[:, 0, ii] = [lat_n, lon_e]
+                corners[:, 1, ii] = [lat_n, lon_w]
+                corners[:, 2, ii] = [lat_s, lon_w]
+                corners[:, 3, ii] = [lat_s, lon_e]
+                ii += 1
+        assert ii == self.size
         return corners
 
     def cell_areas(self):  # float[self.size]
         areas = np.empty([0])
-        for i, (lat, nlon) in enumerate(zip(self.lats, self.nlons)):
-            dlat_n = (self.lats[i-1]-lat)/2 if i > 0 else 90-lat
-            dlat_s = (lat-self.lats[i+1])/2 if i < self.nlats-1 else lat+90
-            dlon = 180/nlon
-            dx = dlon * np.pi/180 * EARTH_RADIUS * np.cos(np.pi/180 * lat)
-            dy = (dlat_n+dlat_s) * np.pi/180 * EARTH_RADIUS
-            areas = np.append(areas, [dx*dy]*nlon)
+        for nlon, lat_area in zip(self.nlons, latband_areas(self.lats)):
+            areas = np.append(areas, np.repeat(lat_area/nlon, nlon))
         assert len(areas) == self.size
         return areas

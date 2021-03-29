@@ -21,7 +21,6 @@ def factory(type_, *args, **kwargs):
         TL255, N128,
     ):
         return ReducedGaussianGrid(
-            nlats=type_.ysize,
             lats=type_.yvals,
             nlons=type_.reducedpoints
         )
