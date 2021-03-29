@@ -440,3 +440,10 @@ TL255 = N128 = _namedtuple_from_dict(
         ]
     }
 )
+
+F128 = _namedtuple_from_dict(
+    'F128',
+    {
+        'yvals': N128.yvals,
+    }
+)

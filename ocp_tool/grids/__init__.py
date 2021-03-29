@@ -5,6 +5,7 @@ from .ifs_griddes import (
     TCO159, O160,
     TL159, N80,
     TL255, N128,
+    F128,
 )
 
 
@@ -24,6 +25,12 @@ def factory(type_, *args, **kwargs):
             lats=type_.yvals,
             nlons=type_.reducedpoints
         )
+
+    elif type_ in (F128,):
+        return GaussianGrid(
+            lats = type_.yvals,
+        )
+
     elif type_ in ('ORCA', 'orca'):
         return ORCA(*args, *kwargs)
 

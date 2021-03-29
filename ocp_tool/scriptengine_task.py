@@ -48,7 +48,8 @@ else:
             )
             self.log_debug(f'NEMO grid type: {type(nemo_grid)}')
 
-            rnfm_grid = grid_factory('F128')
+            rnfm_grid = grid_factory(ocpt.grids.F128)
+            self.log_debug(f'RNFM grid type: {type(rnfm_grid)}')
 
             oasis_grid_names = {
                 'TQ21': 'F016',
