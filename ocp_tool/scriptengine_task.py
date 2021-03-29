@@ -9,6 +9,7 @@ from ocp_tool.grib import read as grib_read
 
 try:
     from scriptengine.tasks.core import Task, timed_runner
+    from scriptengine.exceptions import ScriptEngineTaskRunError
 except (ModuleNotFoundError, ImportError) as e:
     logging.warning(
         'The ScriptEngine module could not be loaded, which means '
@@ -58,6 +59,7 @@ else:
                 'ORCA1L75t': 'O1T0',
                 'ORCA1L75u': 'O1U0',
                 'ORCA1L75v': 'O1V0',
+                'rnfm-atm': 'RnfA',
             }
 
             self.log_debug('Writing OASIS grids.nc file...')
@@ -69,7 +71,7 @@ else:
                 append=False
             )
             write_grid(
-                name='RnfA',
+                name=oasis_grid_names['rnfm-atm'],
                 lats=rnfm_grid.cell_latitudes(),
                 lons=rnfm_grid.cell_longitudes(),
                 corners=rnfm_grid.cell_corners()
@@ -90,7 +92,7 @@ else:
                 append=False
             )
             write_area(
-                name='RnfA',
+                name=oasis_grid_names['rnfm-atm'],
                 areas=rnfm_grid.cell_areas()
             )
             for subgrid in ('t', 'u', 'v'):
@@ -108,11 +110,26 @@ else:
             oifs_lsm = np.where(
                 np.logical_or(data['lsm'] > 0.5, data['cl'] > 0.5), 1, 0
             )
+
+            self.log_debug('Process runoff-mapper mask')
+            rnfm_mask_file = self.getarg('rnfm_mask_file', default=None)
+            if rnfm_mask_file:
+                self.log_error(
+                    'Reading the RNFM mask from file is not implemented yet'
+                )
+                raise ScriptEngineTaskRunError
+            else:
+                rnfm_mask = np.zeros((rnfm_grid.nlons, rnfm_grid.nlats))
+
             self.log_debug('Writing OASIS masks.nc file...')
             write_mask(
                 name=oasis_grid_names[self.getarg('oifs_grid_type')],
                 masks=oifs_lsm,
                 append=False
+            )
+            write_mask(
+                name=oasis_grid_names['rnfm-atm'],
+                masks=rnfm_mask,
             )
             for subgrid in ('t', ):
                 write_mask(
