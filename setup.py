@@ -9,6 +9,11 @@ setuptools.setup(
     url='https://github.com/JanStreffing/ocp-tool',
     packages=setuptools.find_packages(),
     python_requires='>=3.6',
+    install_requires=[
+        'numpy',
+        'netcdf4',
+        'eccodes',
+    ],
     entry_points={
         'scriptengine.tasks': [
             'ocpt.main = ocp_tool.scriptengine_task:OCPTool',
