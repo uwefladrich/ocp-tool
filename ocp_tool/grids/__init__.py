@@ -1,42 +1,46 @@
-from .gaussian import GaussianGrid, ReducedGaussianGrid
+from .regular import RegularLatLonGrid
 from .orca import ORCA
-from .ifs_griddes import (
-    TCO95, O96,
-    TCO159, O160,
-    TL159, N80,
-    TL255, N128,
-    F128,
-)
+from .gaussian import GaussianGrid, ReducedGaussianGrid
+from .ifs_griddes import TCO95, TCO159, TL159, TL255, F128
 
 
-def factory(type_, *args, **kwargs):
+def factory(grid_name, *args, **kwargs):
 
-    full_gaussian_grids = {
-        'F128': N128,
+    reduced_gaussian_grids = {
+        'TCO95': TCO95,
+        'TCO159': TCO159,
+        'TL159': TL159,
+        'TL255': TL255,
     }
 
-    if type_ in (
-        TCO95, O96,
-        TCO159, O160,
-        TL159, N80,
-        TL255, N128,
-    ):
+    full_gaussian_grids = {
+        'F128': F128,
+    }
+
+    orca_grids = {
+        'orca': ORCA,
+        'ORCA': ORCA,
+    }
+
+    regular_latlon_grids = {
+        'regular_latlon': RegularLatLonGrid,
+    }
+
+    if grid_name in reduced_gaussian_grids:
         return ReducedGaussianGrid(
-            lats=type_.yvals,
-            nlons=type_.reducedpoints
+            lats=reduced_gaussian_grids[grid_name].yvals,
+            nlons=reduced_gaussian_grids[grid_name].reducedpoints,
         )
 
-    elif type_ in (F128,):
+    elif grid_name in full_gaussian_grids:
         return GaussianGrid(
-            lats = type_.yvals,
+            lats=full_gaussian_grids[grid_name].yvals,
         )
 
-    elif type_ in ('ORCA', 'orca'):
-        return ORCA(*args, *kwargs)
+    elif grid_name in orca_grids:
+        return ORCA(*args, **kwargs)
 
-    elif type_ in full_gaussian_grids:
-        return GaussianGrid(
-            lats=full_gaussian_grids[type_].yvals
-        )
+    elif grid_name in regular_latlon_grids:
+        return RegularLatLonGrid(*args, **kwargs)
 
-    raise NotImplementedError(f'Unknown grid type: {type_}')
+    raise NotImplementedError(f'Unknown grid type: {grid_name}')
