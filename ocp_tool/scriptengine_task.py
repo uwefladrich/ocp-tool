@@ -2,10 +2,9 @@ import logging
 import numpy as np
 
 import ocp_tool as ocpt
-from ocp_tool.grids import factory as grid_factory
-from ocp_tool.oasis import write_grid, write_area, write_mask
-from ocp_tool.grib import read as grib_read
-
+import ocp_tool.grids
+import ocp_tool.grib
+import ocp_tool.oasis
 
 try:
     from scriptengine.tasks.core import Task, timed_runner
@@ -17,11 +16,12 @@ except (ModuleNotFoundError, ImportError) as e:
         f'(the error was: {e})'
     )
 else:
+
     class OCPTool(Task):
 
         _required_arguments = (
             'oifs_grid_type',
-            'nemo_grid_file',
+            'oifs_mask_file',
         )
 
         def __init__(self, arguments):
@@ -31,110 +31,146 @@ else:
         @timed_runner
         def run(self, context):
 
-            self.log_info(
-                'Creating OASIS files for OpenIFS and NEMO with the OCP Tool'
-            )
-
-            oifs_grid = grid_factory(
-                ocpt.grids.__dict__.get(
-                    self.getarg('oifs_grid_type')
-                )
-            )
-            self.log_debug(f'OIFS grid type: {type(oifs_grid)}')
-
-            nemo_grid = grid_factory(
-                'orca',
-                self.getarg('nemo_grid_file')
-            )
-            self.log_debug(f'NEMO grid type: {type(nemo_grid)}')
-
-            rnfm_grid = grid_factory(ocpt.grids.F128)
-            self.log_debug(f'RNFM grid type: {type(rnfm_grid)}')
-
             oasis_grid_names = {
-                'TQ21': 'F016',
-                'TL159': 'N080',
-                'TCO95': 'O096',
-                'TCO159': 'O160',
-                'TL255': 'N128',
+                'TCO159': 'ACS',  # 2nd character to be inserted later
+                'TL255': 'ALS',
+                'TCO95': 'ACl',
+                'TL159': 'ALl',
+                'TQ21': 'AQx',
                 'ORCA1L75t': 'O1T0',
                 'ORCA1L75u': 'O1U0',
                 'ORCA1L75v': 'O1V0',
                 'rnfm-atm': 'RnfA',
+                'amipfr': 'AMIP',
             }
 
-            self.log_debug('Writing OASIS grids.nc file...')
-            write_grid(
-                name=oasis_grid_names[self.getarg('oifs_grid_type')],
+            # Construct final name for atm grid in OASIS
+            def oifs_oasis_grid_name(grid_type, specifier):
+                return oasis_grid_names[grid_type][0] \
+                       + specifier + oasis_grid_names[grid_type][1:]
+
+            # OpenIFS grid
+            oifs_grid_type = self.getarg('oifs_grid_type', context)
+            try:
+                oifs_grid = ocpt.grids.factory(oifs_grid_type)
+            except NotImplementedError:
+                self.log_error(
+                    'Invalid OIFS grid type: '
+                    f'{self.getarg("oifs_grid_type", context)}'
+                )
+                raise ScriptEngineTaskRunError
+            self.log_debug('Write OIFS grids to grids.nc')
+            ocpt.oasis.write_grid(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
                 lats=oifs_grid.cell_latitudes(),
                 lons=oifs_grid.cell_longitudes(),
                 corners=oifs_grid.cell_corners(),
                 append=False
             )
-            write_grid(
+            self.log_debug('Write OIFS areas to areas.nc')
+            ocpt.oasis.write_area(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
+                areas=oifs_grid.cell_areas(),
+                append=False
+            )
+
+            oifs_mask_file = self.getarg('oifs_mask_file', context)
+            try:
+                oifs_masks = ocpt.grib.read(oifs_mask_file, ('lsm', 'cl'))
+            except (FileNotFoundError, PermissionError):
+                self.log_error(
+                    f'Could not open OIFS mask file "{oifs_mask_file}"'
+                )
+                raise ScriptEngineTaskRunError
+            oifs_lsm = np.where(
+                np.logical_or(
+                    oifs_masks['lsm'] > 0.5, oifs_masks['cl'] > 0.5
+                ), 1, 0
+            )
+            self.log_debug('Write OIFS masks to masks.nc')
+            ocpt.oasis.write_mask(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
+                masks=oifs_lsm,
+                append=False
+            )
+
+            # NEMO grid
+            nemo_grid_file = self.getarg('nemo_grid_file', context, default=None)
+            if nemo_grid_file is not None:
+                try:
+                    nemo_grid = ocpt.grids.factory('ORCA', nemo_grid_file)
+                except (FileNotFoundError, PermissionError):
+                    self.log_error(
+                        f'Could not open NEMO grid file "{nemo_grid_file}"'
+                    )
+                    raise ScriptEngineTaskRunError
+                self.log_debug('Write NEMO grids and areas to grids.nc/areas.nc')
+                for subgrid in ('t', 'u', 'v'):
+                    ocpt.oasis.write_grid(
+                        name=oasis_grid_names[nemo_grid.name+subgrid],
+                        lats=nemo_grid.cell_latitudes(grid=subgrid),
+                        lons=nemo_grid.cell_longitudes(grid=subgrid),
+                        corners=nemo_grid.cell_corners(grid=subgrid)
+                    )
+                    ocpt.oasis.write_area(
+                        name=oasis_grid_names[nemo_grid.name+subgrid],
+                        areas=nemo_grid.cell_areas(grid=subgrid)
+                    )
+                self.log_debug('Write NEMO masks and areas to masks.nc')
+                for subgrid in ('t', ):
+                    ocpt.oasis.write_mask(
+                        name=oasis_grid_names[nemo_grid.name+subgrid],
+                        masks=nemo_grid.cell_masks(grid=subgrid)
+                    )
+
+            # Runoff-mapper grid
+            rnfm_grid = ocpt.grids.factory('F128')
+            self.log_debug('Write RNFM grid to grids.nc')
+            ocpt.oasis.write_grid(
                 name=oasis_grid_names['rnfm-atm'],
                 lats=rnfm_grid.cell_latitudes(),
                 lons=rnfm_grid.cell_longitudes(),
                 corners=rnfm_grid.cell_corners()
             )
-            for subgrid in ('t', 'u', 'v'):
-                write_grid(
-                    name=oasis_grid_names[nemo_grid.name+subgrid],
-                    lats=nemo_grid.cell_latitudes(grid=subgrid),
-                    lons=nemo_grid.cell_longitudes(grid=subgrid),
-                    corners=nemo_grid.cell_corners(grid=subgrid)
-                )
-            self.log_debug('...finished writing OASIS grids.nc file')
-
-            self.log_debug('Writing OASIS areas.nc file...')
-            write_area(
-                name=oasis_grid_names[self.getarg('oifs_grid_type')],
-                areas=oifs_grid.cell_areas(),
-                append=False
-            )
-            write_area(
+            self.log_debug('Write RNFM areas to areas.nc')
+            ocpt.oasis.write_area(
                 name=oasis_grid_names['rnfm-atm'],
                 areas=rnfm_grid.cell_areas()
             )
-            for subgrid in ('t', 'u', 'v'):
-                write_area(
-                    name=oasis_grid_names[nemo_grid.name+subgrid],
-                    areas=nemo_grid.cell_areas(grid=subgrid)
-                )
-            self.log_debug('...finished writing OASIS areas.nc file')
-
-            self.log_debug('Read and process OIFS land-sea mask')
-            data = grib_read(
-                self.getarg('oifs_mask_file'),
-                ('lsm', 'cl')
-            )
-            oifs_lsm = np.where(
-                np.logical_or(data['lsm'] > 0.5, data['cl'] > 0.5), 1, 0
-            )
-
-            self.log_debug('Process runoff-mapper mask')
-            rnfm_mask_file = self.getarg('rnfm_mask_file', default=None)
-            if rnfm_mask_file:
+            self.log_debug('Write RNFM mask to masks.nc')
+            if self.getarg('rnfm_mask_file', context, default=None):
                 self.log_error(
                     'Reading the RNFM mask from file is not implemented yet'
                 )
                 raise ScriptEngineTaskRunError
             else:
-                rnfm_mask = np.zeros((rnfm_grid.nlons, rnfm_grid.nlats))
-
-            self.log_debug('Writing OASIS masks.nc file...')
-            write_mask(
-                name=oasis_grid_names[self.getarg('oifs_grid_type')],
-                masks=oifs_lsm,
-                append=False
-            )
-            write_mask(
-                name=oasis_grid_names['rnfm-atm'],
-                masks=rnfm_mask,
-            )
-            for subgrid in ('t', ):
-                write_mask(
-                    name=oasis_grid_names[nemo_grid.name+subgrid],
-                    masks=nemo_grid.cell_masks(grid=subgrid)
+                ocpt.oasis.write_mask(
+                    name=oasis_grid_names['rnfm-atm'],
+                    masks=np.zeros((rnfm_grid.nlons, rnfm_grid.nlats))
                 )
-            self.log_debug('...finished writing OASIS masks.nc file')
+
+            # AMIP Forcing-reader grid
+            amipfr_grid = ocpt.grids.factory('regular_latlon', 360, 180)
+            self.log_debug('Write AMIP-FR grid to grids.nc')
+            ocpt.oasis.write_grid(
+                name=oasis_grid_names['amipfr'],
+                lats=amipfr_grid.cell_latitudes(),
+                lons=amipfr_grid.cell_longitudes(),
+                corners=amipfr_grid.cell_corners()
+            )
+            self.log_debug('Write AMIP-FR areas to areas.nc')
+            ocpt.oasis.write_area(
+                name=oasis_grid_names['amipfr'],
+                areas=amipfr_grid.cell_areas()
+            )
+            self.log_debug('Write AMIP-FR mask to masks.nc')
+            if self.getarg('amipfr_mask_file', context, default=None):
+                self.log_error(
+                    'Reading the AMIP-FR mask from file is not implemented yet'
+                )
+                raise ScriptEngineTaskRunError
+            else:
+                ocpt.oasis.write_mask(
+                    name=oasis_grid_names['amipfr'],
+                    masks=np.zeros((amipfr_grid.nx, amipfr_grid.ny))
+                )
