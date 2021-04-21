@@ -48,28 +48,28 @@ class ORCA:
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'gphi{subgrid}'][0, :, :].T.data
+            return nc.variables[f'gphi{subgrid}'][0, ...].T.data
 
     def cell_longitudes(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'glam{subgrid}'][0, :, :].T.data
+            return nc.variables[f'glam{subgrid}'][0, ...].T.data
 
     def cell_areas(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
             return \
-                nc.variables[f'e1{subgrid}'][0, :, :].T.data \
-                * nc.variables[f'e2{subgrid}'][0, :, :].T.data
+                nc.variables[f'e1{subgrid}'][0, ...].T.data \
+                * nc.variables[f'e2{subgrid}'][0, ...].T.data
 
     def cell_masks(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
             if subgrid == 't':
-                return nc.variables['top_level'][0, :, :].T.data
+                return nc.variables['top_level'][0, ...].T.data
             else:
                 raise NotImplementedError(
                     'Masks only implemented for T-grid so far'
@@ -92,14 +92,14 @@ class ORCA:
             +------------> j
             '''
             if subgrid == 't':
-                lats = nc.variables['gphif'][0, :, :].T.data
-                lons = nc.variables['glamf'][0, :, :].T.data
+                lats = nc.variables['gphif'][0, ...].T.data
+                lons = nc.variables['glamf'][0, ...].T.data
             elif subgrid == 'u':
-                lats = nc.variables['gphiv'][0, :, :].T.data
-                lons = nc.variables['glamv'][0, :, :].T.data
+                lats = nc.variables['gphiv'][0, ...].T.data
+                lons = nc.variables['glamv'][0, ...].T.data
             elif subgrid == 'v':
-                lats = nc.variables['gphiu'][0, :, :].T.data
-                lons = nc.variables['glamu'][0, :, :].T.data
+                lats = nc.variables['gphiu'][0, ...].T.data
+                lons = nc.variables['glamu'][0, ...].T.data
             else:
                 raise NotImplementedError(
                      'ORCA corners implemented for t/u/v-grids only'
