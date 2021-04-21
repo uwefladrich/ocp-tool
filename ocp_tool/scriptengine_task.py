@@ -108,19 +108,19 @@ else:
                 for subgrid in ('t', 'u', 'v'):
                     ocpt.oasis.write_grid(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
-                        lats=nemo_grid.cell_latitudes(grid=subgrid),
-                        lons=nemo_grid.cell_longitudes(grid=subgrid),
-                        corners=nemo_grid.cell_corners(grid=subgrid)
+                        lats=nemo_grid.cell_latitudes(subgrid=subgrid),
+                        lons=nemo_grid.cell_longitudes(subgrid=subgrid),
+                        corners=nemo_grid.cell_corners(subgrid=subgrid)
                     )
                     ocpt.oasis.write_area(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
-                        areas=nemo_grid.cell_areas(grid=subgrid)
+                        areas=nemo_grid.cell_areas(subgrid=subgrid)
                     )
                 self.log_debug('Write NEMO masks and areas to masks.nc')
                 for subgrid in ('t', ):
                     ocpt.oasis.write_mask(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
-                        masks=nemo_grid.cell_masks(grid=subgrid)
+                        masks=nemo_grid.cell_masks(subgrid=subgrid)
                     )
 
             # Runoff-mapper grid

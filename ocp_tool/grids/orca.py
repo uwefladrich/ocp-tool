@@ -2,8 +2,8 @@ import numpy as np
 from netCDF4 import Dataset
 
 
-def _grid_supported(grid):
-    return grid in ('t', 'u', 'v')
+def _valid_subgrid(subgrid):
+    return subgrid in ('t', 'u', 'v')
 
 
 class ORCA:
@@ -44,40 +44,40 @@ class ORCA:
                     'Unknown dimensions in NEMO grid file'
                 )
 
-    def cell_latitudes(self, grid='t'):
-        if not _grid_supported(grid):
-            raise ValueError(f'Invalid NEMO grid: {grid}')
+    def cell_latitudes(self, subgrid='t'):
+        if not _valid_subgrid(subgrid):
+            raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'gphi{grid}'][0, :, :].T.data
+            return nc.variables[f'gphi{subgrid}'][0, :, :].T.data
 
-    def cell_longitudes(self, grid='t'):
-        if not _grid_supported(grid):
-            raise ValueError(f'Invalid NEMO grid: {grid}')
+    def cell_longitudes(self, subgrid='t'):
+        if not _valid_subgrid(subgrid):
+            raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'glam{grid}'][0, :, :].T.data
+            return nc.variables[f'glam{subgrid}'][0, :, :].T.data
 
-    def cell_areas(self, grid='t'):
-        if not _grid_supported(grid):
-            raise ValueError(f'Invalid NEMO grid: {grid}')
+    def cell_areas(self, subgrid='t'):
+        if not _valid_subgrid(subgrid):
+            raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
             return \
-                nc.variables[f'e1{grid}'][0, :, :].T.data \
-                * nc.variables[f'e2{grid}'][0, :, :].T.data
+                nc.variables[f'e1{subgrid}'][0, :, :].T.data \
+                * nc.variables[f'e2{subgrid}'][0, :, :].T.data
 
-    def cell_masks(self, grid='t'):
-        if not _grid_supported(grid):
-            raise ValueError(f'Invalid NEMO grid: {grid}')
+    def cell_masks(self, subgrid='t'):
+        if not _valid_subgrid(subgrid):
+            raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            if grid == 't':
+            if subgrid == 't':
                 return nc.variables['top_level'][0, :, :].T.data
             else:
                 raise NotImplementedError(
                     'Masks only implemented for T-grid so far'
                 )
 
-    def cell_corners(self, grid='t'):
-        if not _grid_supported(grid):
-            raise ValueError(f'Invalid NEMO grid: {grid}')
+    def cell_corners(self, subgrid='t'):
+        if not _valid_subgrid(subgrid):
+            raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
 
         with Dataset(self.file, mode='r') as nc:
             '''
@@ -91,13 +91,13 @@ class ORCA:
             |
             +------------> j
             '''
-            if grid == 't':
+            if subgrid == 't':
                 lats = nc.variables['gphif'][0, :, :].T.data
                 lons = nc.variables['glamf'][0, :, :].T.data
-            elif grid == 'u':
+            elif subgrid == 'u':
                 lats = nc.variables['gphiv'][0, :, :].T.data
                 lons = nc.variables['glamv'][0, :, :].T.data
-            elif grid == 'v':
+            elif subgrid == 'v':
                 lats = nc.variables['gphiu'][0, :, :].T.data
                 lons = nc.variables['glamu'][0, :, :].T.data
             else:
