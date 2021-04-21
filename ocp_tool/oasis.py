@@ -4,11 +4,13 @@ import numpy as np
 from netCDF4 import Dataset as NCDataset
 
 
-def get_var(nc, name, type_, dim):
-    if name not in nc.variables:
-        return nc.createVariable(name, type_, dim)
-    else:
+def _get_var(nc, name, type_, dim):
+    """Return variable with 'name' from Dataset 'nc', creating it if it does
+    not exist"""
+    if name in nc.variables:
         return nc.variables[name]
+    else:
+        return nc.createVariable(name, type_, dim)
 
 
 def write_grid(name, lats, lons, corners=None, path=None, append=True):
@@ -43,12 +45,12 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
         if y_d not in nc.dimensions:
             nc.createDimension(y_d, y_n)
 
-        lat_id = get_var(nc, lat_v, 'float64', (y_d, x_d))
+        lat_id = _get_var(nc, lat_v, 'float64', (p_d, q_d))
         lat_id.units = 'degrees_north'
         lat_id.standard_name = 'Latitude'
         lat_id[:, :] = lats.T if two_dim else [lats]
 
-        lon_id = get_var(nc, lon_v, 'float64', (y_d, x_d))
+        lon_id = _get_var(nc, lon_v, 'float64', (p_d, q_d))
         lon_id.units = 'degrees_east'
         lon_id.standard_name = 'Longitude'
         lon_id[:, :] = lons.T if two_dim else [lons]
@@ -57,11 +59,11 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
             if c_d not in nc.dimensions:
                 nc.createDimension(c_d, 4)
 
-            cla_id = get_var(nc, cla_v, 'float64', (c_d, y_d, x_d))
+            cla_id = _get_var(nc, cla_v, 'float64', (c_d, p_d, q_d))
             cla_id.units = 'degrees_north'
             cla_id.standard_name = 'Corner_latitude'
 
-            clo_id = get_var(nc, clo_v, 'float64', (c_d, y_d, x_d))
+            clo_id = _get_var(nc, clo_v, 'float64', (c_d, p_d, q_d))
             clo_id.units = 'degrees_east'
             clo_id.standard_name = 'Corner_longitude'
 
@@ -100,7 +102,7 @@ def write_area(name, areas, path=None, append=True):
         if y_d not in nc.dimensions:
             nc.createDimension(y_d, y_n)
 
-        areas_id = get_var(nc, areas_v, 'float64', (y_d, x_d))
+        areas_id = _get_var(nc, areas_v, 'float64', (p_d, q_d))
         areas_id[:, :] = areas.T if two_dim else [areas]
 
 
@@ -129,5 +131,5 @@ def write_mask(name, masks, path=None, append=True):
         if y_d not in nc.dimensions:
             nc.createDimension(y_d, y_n)
 
-        masks_id = get_var(nc, masks_v, 'int32', (y_d, x_d))
+        masks_id = _get_var(nc, masks_v, 'int32', (p_d, q_d))
         masks_id[:, :] = masks.T if two_dim else [masks]
