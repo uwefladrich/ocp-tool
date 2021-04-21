@@ -150,7 +150,11 @@ else:
                 )
 
             # AMIP Forcing-reader grid
-            amipfr_grid = ocpt.grids.factory('regular_latlon', 360, 180)
+            amipfr_grid = ocpt.grids.factory(
+                'regular_latlon',
+                nlat=180,
+                nlon=360
+            )
             self.log_debug('Write AMIP-FR grid to grids.nc')
             ocpt.oasis.write_grid(
                 name=oasis_grid_names['amipfr'],
@@ -172,5 +176,5 @@ else:
             else:
                 ocpt.oasis.write_mask(
                     name=oasis_grid_names['amipfr'],
-                    masks=np.zeros((amipfr_grid.nx, amipfr_grid.ny))
+                    masks=np.zeros((amipfr_grid.nlat, amipfr_grid.nlon))
                 )
