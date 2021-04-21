@@ -48,28 +48,30 @@ class ORCA:
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'gphi{subgrid}'][0, ...].T.data
+            return nc.variables[f'gphi{subgrid}'][0, ...].data
 
     def cell_longitudes(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
-            return nc.variables[f'glam{subgrid}'][0, ...].T.data
+            return nc.variables[f'glam{subgrid}'][0, ...].data
 
     def cell_areas(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
             return \
-                nc.variables[f'e1{subgrid}'][0, ...].T.data \
-                * nc.variables[f'e2{subgrid}'][0, ...].T.data
+                nc.variables[f'e1{subgrid}'][0, ...].data \
+                * nc.variables[f'e2{subgrid}'][0, ...].data
 
     def cell_masks(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
         with Dataset(self.file, mode='r') as nc:
             if subgrid == 't':
-                return nc.variables['top_level'][0, ...].T.data
+                return np.where(
+                    nc.variables['top_level'][0, ...].data==0, 1, 0
+                )
             else:
                 raise NotImplementedError(
                     'Masks only implemented for T-grid so far'
