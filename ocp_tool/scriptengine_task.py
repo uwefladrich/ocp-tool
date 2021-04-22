@@ -104,7 +104,7 @@ else:
                         f'Could not open NEMO grid file "{nemo_grid_file}"'
                     )
                     raise ScriptEngineTaskRunError
-                self.log_debug('Write NEMO grids and areas to grids.nc/areas.nc')
+                self.log_debug('Write NEMO grids, areas, masks')
                 for subgrid in ('t', 'u', 'v'):
                     ocpt.oasis.write_grid(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
@@ -116,8 +116,6 @@ else:
                         name=oasis_grid_names[nemo_grid.name+subgrid],
                         areas=nemo_grid.cell_areas(subgrid=subgrid)
                     )
-                self.log_debug('Write NEMO masks and areas to masks.nc')
-                for subgrid in ('t', ):
                     ocpt.oasis.write_mask(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
                         masks=nemo_grid.cell_masks(subgrid=subgrid)
