@@ -46,7 +46,7 @@ else:
             #       L - linear (TL) grid
             #       C - cubic octahedral (Tco) grid
             #   and mask_type is:
-            #       A - atmosphere, nothing masked
+            #       A - all atmosphere, nothing masked
             #       L - land, ocean is masked
             #       O - ocean, land is masked
             #   and resolution is:
@@ -89,7 +89,7 @@ else:
                 return oasis_grid_names[grid_type][0] \
                        + specifier + oasis_grid_names[grid_type][1:]
 
-            # OpenIFS grid
+            # OpenIFS grid(s)
             oifs_grid_type = self.getarg('oifs_grid_type', context)
             try:
                 oifs_grid = ocpt.grids.factory(oifs_grid_type)
@@ -101,17 +101,27 @@ else:
                 raise ScriptEngineTaskRunError
             self.log_debug('Write OIFS grids to grids.nc')
             ocpt.oasis.write_grid(
-                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
+                name=oifs_oasis_grid_name(oifs_grid_type, 'L'),
                 lats=oifs_grid.cell_latitudes(),
                 lons=oifs_grid.cell_longitudes(),
                 corners=oifs_grid.cell_corners(),
                 append=False
             )
+            ocpt.oasis.write_grid(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'O'),
+                lats=oifs_grid.cell_latitudes(),
+                lons=oifs_grid.cell_longitudes(),
+                corners=oifs_grid.cell_corners()
+            )
             self.log_debug('Write OIFS areas to areas.nc')
             ocpt.oasis.write_area(
-                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
+                name=oifs_oasis_grid_name(oifs_grid_type, 'L'),
                 areas=oifs_grid.cell_areas(),
                 append=False
+            )
+            ocpt.oasis.write_area(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'O'),
+                areas=oifs_grid.cell_areas()
             )
 
             oifs_mask_file = self.getarg('oifs_mask_file', context)
@@ -129,9 +139,13 @@ else:
             )
             self.log_debug('Write OIFS masks to masks.nc')
             ocpt.oasis.write_mask(
-                name=oifs_oasis_grid_name(oifs_grid_type, 'A'),
+                name=oifs_oasis_grid_name(oifs_grid_type, 'L'),
                 masks=oifs_lsm,
                 append=False
+            )
+            ocpt.oasis.write_mask(
+                name=oifs_oasis_grid_name(oifs_grid_type, 'O'),
+                masks=1-oifs_lsm
             )
 
             # NEMO grid
