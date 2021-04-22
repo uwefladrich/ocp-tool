@@ -96,7 +96,7 @@ class GaussianGrid:
         return np.tile(
             latband_areas(self.lats)/self.nlons,
             (self.nlons, 1)
-        )
+        ).T
 
 
 class ReducedGaussianGrid:
