@@ -31,16 +31,56 @@ else:
         @timed_runner
         def run(self, context):
 
+            # OASIS grid name:
+            # <component><component_spec_1><component_spec_2><component_spec_3>
+            #
+            #   where component is:
+            #       I - OpenIFS
+            #       N - NEMO/SI3
+            #       R - Runoff-mapper
+            #       A - AMIP Forcing reader
+            #
+            # OpenIFS component spec:
+            # <grid_type><mask_type><resolution>
+            #   where grid_type is:
+            #       L - linear (TL) grid
+            #       C - cubic octahedral (Tco) grid
+            #   and mask_type is:
+            #       A - atmosphere, nothing masked
+            #       L - land, ocean is masked
+            #       O - ocean, land is masked
+            #   and resolution is:
+            #       l - very low resolution
+            #       L - low resolution
+            #       M - medium (standard) resolution
+            #       H - high resolution
+            #       h - very high resolution
+            #       x - extremely high resolution
+            #
+            # NEMO componen spec:
+            #   <extend><subgrid><resolution>
+            #       where extend is
+            #           O - standard ORCA grids
+            #           E - extended eORCA grids
+            #       and subgrid is
+            #           T, U, V - t, u, v staggered subgrids
+            #       and resolution is
+            #           L - low resolution (ORCA2)
+            #           M - medium (standard) resolution (ORCA1)
+            #           H - high resolution (ORCA025)
+            #           h - very high resolution (ORCA012)
+            #           x - extremely high resolution (ORCA036)
+
             oasis_grid_names = {
-                'TCO159': 'ACS',  # 2nd character to be inserted later
-                'TL255': 'ALS',
-                'TCO95': 'ACl',
-                'TL159': 'ALl',
-                'TQ21': 'AQx',
-                'ORCA1L75t': 'O1T0',
-                'ORCA1L75u': 'O1U0',
-                'ORCA1L75v': 'O1V0',
-                'rnfm-atm': 'RnfA',
+                'TCO159': 'ICM',  # 2nd character to be inserted later
+                'TL255': 'ILM',
+                'TCO95': 'ICL',
+                'TL159': 'ILL',
+                'TQ21': 'IQx',
+                'ORCA1L75t': 'NOTM',
+                'ORCA1L75u': 'NOUM',
+                'ORCA1L75v': 'NOVM',
+                'rnfm-atm': 'RNFA',
                 'amipfr': 'AMIP',
             }
 
