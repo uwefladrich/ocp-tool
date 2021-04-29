@@ -12,14 +12,15 @@ class ORCA:
         (362, 292, 75): 'ORCA1L75',
     }
 
-    def __init__(self, file):
+    def __init__(self, domain_cfg, masks=None):
 
-        self.file = file
+        self.domain_cfg = domain_cfg
+        self.masks = masks
 
-        with Dataset(file, mode='r') as nc:
+        with Dataset(domain_cfg) as nc:
             if not {'x', 'y'}.issubset(nc.dimensions):
                 raise RuntimeError(
-                    'Missing dimensions in NetCDF file'
+                    'Missing dimensions in NEMO domain config'
                 )
             if not {
                 'glamt', 'glamu', 'glamv', 'glamf',
@@ -29,7 +30,7 @@ class ORCA:
                 'top_level',
             }.issubset(nc.variables):
                 raise RuntimeError(
-                    'Missing variables in NetCDF file'
+                    'Missing variables in NEMO domain config'
                 )
             try:
                 self.name = self._orca_names[
@@ -41,25 +42,33 @@ class ORCA:
                 ]
             except KeyError:
                 raise RuntimeError(
-                    'Unknown dimensions in NEMO grid file'
+                    'Unknown dimensions in NEMO domain config'
                 )
+        if self.masks is not None:
+            with Dataset(self.masks) as nc:
+                if not {
+                    'tmaskutil', 'umaskutil', 'vmaskutil'
+                }.issubset(nc.variables):
+                    raise RuntimeError(
+                        'Missing variables in NEMO masks file'
+                    )
 
     def cell_latitudes(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
-        with Dataset(self.file, mode='r') as nc:
+        with Dataset(self.domain_cfg) as nc:
             return nc.variables[f'gphi{subgrid}'][0, ...].data
 
     def cell_longitudes(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
-        with Dataset(self.file, mode='r') as nc:
+        with Dataset(self.domain_cfg) as nc:
             return nc.variables[f'glam{subgrid}'][0, ...].data
 
     def cell_areas(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
-        with Dataset(self.file, mode='r') as nc:
+        with Dataset(self.domain_cfg) as nc:
             return \
                 nc.variables[f'e1{subgrid}'][0, ...].data \
                 * nc.variables[f'e2{subgrid}'][0, ...].data
@@ -67,22 +76,42 @@ class ORCA:
     def cell_masks(self, subgrid='t'):
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
-        with Dataset(self.file, mode='r') as nc:
+
+        def mask_borders(mask):
+            mask[-1, :] = 1  # mask north-fold line
+            mask[:, (0, -1)] = 1  # mask east+west borders
+
+        # If a NEMO mask file is provided, just read T, U, V masks
+        if self.masks is not None:
+            with Dataset(self.masks) as nc:
+                mask = np.where(
+                    nc.variables[f'{subgrid}maskutil'][0, ...].data > 0, 0, 1
+                )
+                mask_borders(mask)
+                return mask
+
+        # Without a NEMO mask file, compute masks from top_level in domain_cfg
+        with Dataset(self.domain_cfg) as nc:
             tmask = np.where(
                 nc.variables['top_level'][0, ...].data == 0, 1, 0
             )
             if subgrid == 't':
+                mask_borders(tmask)
                 return tmask
             elif subgrid == 'u':
-                return tmask \
-                       * tmask.take(
+                umask = tmask \
+                        * tmask.take(
                             range(1, tmask.shape[1]+1), axis=1, mode='wrap'
-                         )
+                          )
+                mask_borders(umask)
+                return umask
             elif subgrid == 'v':
-                return tmask \
-                       * tmask.take(
+                vmask = tmask \
+                        * tmask.take(
                             range(1, tmask.shape[0]+1), axis=0, mode='clip'
-                         )
+                          )
+                mask_borders(vmask)
+                return vmask
 
     def cell_corners(self, subgrid='t'):
         """For the ORCA grid and staggered subgrids, see
@@ -100,7 +129,7 @@ class ORCA:
         if not _valid_subgrid(subgrid):
             raise ValueError(f'Invalid NEMO subgrid: {subgrid}')
 
-        with Dataset(self.file, mode='r') as nc:
+        with Dataset(self.domain_cfg) as nc:
             if subgrid == 't':
                 lats = nc.variables['gphif'][0, ...].data
                 lons = nc.variables['glamf'][0, ...].data
@@ -112,7 +141,9 @@ class ORCA:
                 lons = nc.variables['glamu'][0, ...].data
 
         if lats.shape != lons.shape:
-            raise ValueError(f'Incompatible lat/lon arrays in {self.file}')
+            raise ValueError(
+                f'Incompatible lat/lon arrays in {self.domain_cfg}'
+            )
 
         # Note that some corner lats/lons will be left undefined (set to an
         # invalid initial value), because we do not handle the north-fold
