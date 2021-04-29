@@ -135,7 +135,7 @@ else:
             oifs_lsm = np.where(
                 np.logical_or(
                     oifs_masks['lsm'] > 0.5, oifs_masks['cl'] > 0.5
-                ), 1, 0
+                ), 0, 1
             )
             self.log_debug('Write OIFS masks to masks.nc')
             ocpt.oasis.write_mask(
