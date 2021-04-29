@@ -120,28 +120,31 @@ class ORCA:
         # u-grids).
         corners = np.full((2, 4, *lats.shape), -99999.0)
 
-        if subgrid == 't':
-            corners[0, 1, :, :] = np.roll(lats, 1, axis=1)
-            corners[1, 1, :, :] = np.roll(lons, 1, axis=1)
+        # give indices in the corners array sensible names
+        lat, lon = 0, 1
+        nw, ne, se, sw = 0, 1, 2, 3
 
-            corners[0, 2, 1:, :] = np.roll(lats[:-1, :], 1, axis=1)
-            corners[1, 2, 1:, :] = np.roll(lons[:-1, :], 1, axis=1)
+        if subgrid == 't':
+            corners[lat, ne, :, :] = np.roll(lats, 1, axis=1)
+            corners[lon, ne, :, :] = np.roll(lons, 1, axis=1)
+            corners[lat, se, 1:, :] = np.roll(lats[:-1, :], 1, axis=1)
+            corners[lon, se, 1:, :] = np.roll(lons[:-1, :], 1, axis=1)
 
         elif subgrid == 'u':
-            corners[0, 1, :, :] = lats
-            corners[1, 1, :, :] = lons
-
-            corners[0, 2, 1:, :] = lats[:-1, :]
-            corners[1, 2, 1:, :] = lons[:-1, :]
+            corners[lat, ne, :, :] = lats
+            corners[lon, ne, :, :] = lons
+            corners[lat, se, 1:, :] = lats[:-1, :]
+            corners[lon, se, 1:, :] = lons[:-1, :]
 
         elif subgrid == 'v':
-            corners[0, 1, :-1, :] = np.roll(lats[1:, :], 1, axis=1)
-            corners[1, 1, :-1, :] = np.roll(lons[1:, :], 1, axis=1)
+            corners[lat, ne, :-1, :] = np.roll(lats[1:, :], 1, axis=1)
+            corners[lon, ne, :-1, :] = np.roll(lons[1:, :], 1, axis=1)
+            corners[lat, se, :, :] = np.roll(lats, 1, axis=1)
+            corners[lon, se, :, :] = np.roll(lons, 1, axis=1)
 
-            corners[0, 2, :, :] = np.roll(lats, 1, axis=1)
-            corners[1, 2, :, :] = np.roll(lons, 1, axis=1)
-
-        corners[:, 0, :, :] = np.roll(corners[:, 1, :, :], -1, axis=2)
-        corners[:, 3, :, :] = np.roll(corners[:, 2, :, :], -1, axis=2)
+        # the westly corners are just copies of the eastly corners of the
+        # "next" cell
+        corners[:, nw, :, :] = np.roll(corners[:, ne, :, :], -1, axis=2)
+        corners[:, sw, :, :] = np.roll(corners[:, se, :, :], -1, axis=2)
 
         return corners
