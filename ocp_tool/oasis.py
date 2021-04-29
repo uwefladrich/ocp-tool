@@ -59,22 +59,22 @@ def write_grid(name, lats, lons, corners=None, path=None, append=True):
             if crn_d not in nc.dimensions:
                 nc.createDimension(crn_d, 4)
 
-            cla_id = _get_var(nc, cla_v, 'float64', (crn_d, row_d, col_d))
+            cla_id = _get_var(nc, cla_v, 'float64', (row_d, col_d, crn_d))
             cla_id.units = 'degrees_north'
             cla_id.standard_name = 'Corner_latitude'
 
-            clo_id = _get_var(nc, clo_v, 'float64', (crn_d, row_d, col_d))
+            clo_id = _get_var(nc, clo_v, 'float64', (row_d, col_d, crn_d))
             clo_id.units = 'degrees_east'
             clo_id.standard_name = 'Corner_longitude'
 
             if two_dim:
                 assert corners.ndim == 4
-                cla_id[...] = corners[0, ...]
-                clo_id[...] = corners[1, ...]
+                cla_id[...] = np.transpose(corners[0, ...], (1, 2, 0))
+                clo_id[...] = np.transpose(corners[1, ...], (1, 2, 0))
             else:
                 assert corners.ndim == 3
-                cla_id[..., 0] = corners[0, ...]
-                clo_id[..., 0] = corners[1, ...]
+                cla_id[:, 0, :] = np.transpose(corners[0, ...])
+                clo_id[:, 0, :] = np.transpose(corners[1, ...])
 
 
 def write_area(name, areas, path=None, append=True):
