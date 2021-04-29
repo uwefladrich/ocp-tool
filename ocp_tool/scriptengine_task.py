@@ -114,6 +114,9 @@ else:
                 corners=oifs_grid.cell_corners()
             )
             self.log_debug('Write OIFS areas to areas.nc')
+            self.log_debug(
+                f'OIFS grid area: {oifs_grid.cell_areas().sum():12.8e}'
+            )
             ocpt.oasis.write_area(
                 name=oifs_oasis_grid_name(oifs_grid_type, 'L'),
                 areas=oifs_grid.cell_areas(),
@@ -160,6 +163,18 @@ else:
                     )
                     raise ScriptEngineTaskRunError
                 self.log_debug('Write NEMO grids, areas, masks')
+                self.log_debug(
+                    'NEMO t-grid area: '
+                    f'{nemo_grid.cell_areas(subgrid="t").sum():12.8e}'
+                )
+                self.log_debug(
+                    'NEMO u-grid area: '
+                    f'{nemo_grid.cell_areas(subgrid="u").sum():12.8e}'
+                )
+                self.log_debug(
+                    'NEMO v-grid area: '
+                    f'{nemo_grid.cell_areas(subgrid="v").sum():12.8e}'
+                )
                 for subgrid in ('t', 'u', 'v'):
                     ocpt.oasis.write_grid(
                         name=oasis_grid_names[nemo_grid.name+subgrid],
@@ -186,6 +201,9 @@ else:
                 corners=rnfm_grid.cell_corners()
             )
             self.log_debug('Write RNFM areas to areas.nc')
+            self.log_debug(
+                f'RNFM grid area: {rnfm_grid.cell_areas().sum():12.8e}'
+            )
             ocpt.oasis.write_area(
                 name=oasis_grid_names['rnfm-atm'],
                 areas=rnfm_grid.cell_areas()
@@ -216,6 +234,9 @@ else:
                 corners=amipfr_grid.cell_corners()
             )
             self.log_debug('Write AMIP-FR areas to areas.nc')
+            self.log_debug(
+                f'AMIP-FR grid area: {amipfr_grid.cell_areas().sum():12.8e}'
+            )
             ocpt.oasis.write_area(
                 name=oasis_grid_names['amipfr'],
                 areas=amipfr_grid.cell_areas()
