@@ -42,7 +42,7 @@ class RegularLatLonGrid:
     def cell_areas(self):
         sine = np.sin(
             np.radians(
-                np.linspace(90.0, -90.0, 2*self.nlat, endpoint=False)[1::2]
+                np.linspace(90.0, -90.0, self.nlat+1)
             )
         )
         return np.tile(
