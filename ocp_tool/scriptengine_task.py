@@ -156,7 +156,9 @@ else:
             nemo_mask_file = self.getarg('nemo_mask_file', context, default=None)
             if nemo_grid_file is not None:
                 try:
-                    nemo_grid = ocpt.grids.factory('ORCA', nemo_grid_file, nemo_mask_file)
+                    nemo_grid = ocpt.grids.factory(
+                        'ORCA', nemo_grid_file, nemo_mask_file
+                    )
                 except (FileNotFoundError, PermissionError):
                     self.log_error(
                         f'Could not open NEMO grid file "{nemo_grid_file}"'
