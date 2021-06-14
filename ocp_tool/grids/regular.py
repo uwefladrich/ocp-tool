@@ -56,10 +56,10 @@ class LatLonGrid:
         lower_lats = _interval_bounds(self._OP, self.lats, -self._OP, loc='l')
         return np.array(
             [
-                _col_distribute(upper_lats, len(self.lons)),  # corner 1
-                _col_distribute(upper_lats, len(self.lons)),  # corner 2
-                _col_distribute(lower_lats, len(self.lons)),  # corner 3
-                _col_distribute(lower_lats, len(self.lons)),  # corner 4
+                _col_distribute(upper_lats, len(self.lons)),  # 1 ---- 0
+                _col_distribute(upper_lats, len(self.lons)),  # |      |
+                _col_distribute(lower_lats, len(self.lons)),  # |      |
+                _col_distribute(lower_lats, len(self.lons)),  # 2 ---- 3
             ]
         )
 
@@ -68,10 +68,10 @@ class LatLonGrid:
         right_lons = _interval_bounds(0, self.lons, 360, loc='r', wrap=True)
         return np.array(
             [
-                _row_distribute(right_lons, len(self.lats)),  # corner 1
-                _row_distribute(left_lons, len(self.lats)),  # corner 2
-                _row_distribute(left_lons, len(self.lats)),  # corner 3
-                _row_distribute(right_lons, len(self.lats)),  # corner 4
+                _row_distribute(right_lons, len(self.lats)),  # 1 ---- 0
+                _row_distribute(left_lons, len(self.lats)),   # |      |
+                _row_distribute(left_lons, len(self.lats)),   # |      |
+                _row_distribute(right_lons, len(self.lats)),  # 2 ---- 3
             ]
         )
 
