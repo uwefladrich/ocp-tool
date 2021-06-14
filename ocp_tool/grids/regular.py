@@ -26,12 +26,16 @@ def _col_distribute(col, ncols):
     return np.tile(col, (ncols, 1)).T
 
 
-class RegularLatLonGrid:
+class LatLonGrid:
 
-    def __init__(self, nlat, nlon, lats_start=-90):
+    def __init__(self, lats, lons, lats_start=-90):
+        if not (lats_start < lats[0] <= lats[-1] < -lats_start):
+            raise ValueError(
+                'Inconsistent latitude/lats_start values'
+            )
         self._OP = lats_start
-        self.lats = _equidistant(self._OP, -self._OP, nlat)
-        self.lons = _equidistant(0, 360, nlon)
+        self.lats = lats
+        self.lons = lons
 
     @property
     def nlat(self):
@@ -86,4 +90,22 @@ class RegularLatLonGrid:
                 - np.sin(np.radians(lower_lats))
             )/len(self.lons),
             len(self.lons)
+        )
+
+
+class RegularLatLonGrid(LatLonGrid):
+    def __init__(self, nlat, nlon, lats_start=-90):
+        super().__init__(
+            lats=_equidistant(lats_start, -lats_start, nlat),
+            lons=_equidistant(0, 360, nlon),
+            lats_start=lats_start
+        )
+
+
+class FullGaussianGrid(LatLonGrid):
+    def __init__(self, lats, lats_start=-90):
+        super().__init__(
+            lats=lats,
+            lons=_equidistant(0, 360, 2*len(lats)),
+            lats_start=lats_start
         )
