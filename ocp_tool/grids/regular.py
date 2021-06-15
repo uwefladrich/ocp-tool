@@ -127,6 +127,6 @@ class FullGaussianGrid(LatLonGrid):
     def __init__(self, lats, first_lat=-90):
         super().__init__(
             lats=lats,
-            lons=_equidistant(0, 360, 2*len(lats)),
+            lons=_equidistant(0, 360, 2*len(lats), first_at_start=True),
             first_lat=first_lat
         )
