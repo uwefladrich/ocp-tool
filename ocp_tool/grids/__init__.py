@@ -1,7 +1,7 @@
 from .regular import RegularLatLonGrid, FullGaussianGrid
 from .orca import ORCA
 from .gaussian import ReducedGaussianGrid
-from .ifs_griddes import TCO95, TCO159, TL159, TL255, F128
+from .oifs import TCO95, TCO159, TL159, TL255, F128
 
 
 def factory(grid_name, *args, **kwargs):
