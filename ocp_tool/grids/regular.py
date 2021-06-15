@@ -41,8 +41,8 @@ class LatLonGrid:
             raise ValueError('Non-monotonic longitude values')
 
         self._OP = first_lat
-        self.lats = lats
-        self.lons = lons
+        self.lats = np.array(lats)
+        self.lons = np.array(lons)
 
     @property
     def nlats(self):
