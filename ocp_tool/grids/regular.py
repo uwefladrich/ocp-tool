@@ -26,14 +26,21 @@ def _col_distribute(col, ncols):
     return np.tile(col, (ncols, 1)).T
 
 
+def _is_monotonic(array):
+    """Checks for *strict* monotonicity"""
+    darray = np.diff(array)
+    return all(darray < 0) or all(darray > 0)
+
+
 class LatLonGrid:
 
-    def __init__(self, lats, lons, lats_start=-90):
-        if not (lats_start < lats[0] <= lats[-1] < -lats_start):
-            raise ValueError(
-                'Inconsistent latitude/lats_start values'
-            )
-        self._OP = lats_start
+    def __init__(self, lats, lons, first_lat=-90):
+        if not _is_monotonic((first_lat, *lats, -first_lat)):
+            raise ValueError('Non-monotonic latitude values')
+        if not _is_monotonic(lons):
+            raise ValueError('Non-monotonic longitude values')
+
+        self._OP = first_lat
         self.lats = lats
         self.lons = lons
 
