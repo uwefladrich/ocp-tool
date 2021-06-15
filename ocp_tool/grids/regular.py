@@ -45,11 +45,11 @@ class LatLonGrid:
         self.lons = lons
 
     @property
-    def nlat(self):
+    def nlats(self):
         return len(self.lats)
 
     @property
-    def nlon(self):
+    def nlons(self):
         return len(self.lons)
 
     def cell_latitudes(self):
@@ -101,10 +101,10 @@ class LatLonGrid:
 
 
 class RegularLatLonGrid(LatLonGrid):
-    def __init__(self, nlat, nlon, first_lat=-90):
+    def __init__(self, nlats, nlons, first_lat=-90):
         super().__init__(
-            lats=_equidistant(first_lat, -first_lat, nlat),
-            lons=_equidistant(0, 360, nlon),
+            lats=_equidistant(first_lat, -first_lat, nlats),
+            lons=_equidistant(0, 360, nlons),
             first_lat=first_lat
         )
 
