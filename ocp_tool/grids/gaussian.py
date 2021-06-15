@@ -59,7 +59,7 @@ class ReducedGaussianGrid:
             )
         self.lats = np.array(lats)
         self.nlons = np.array(nlons)
-        self.size = sum(self.nlons)
+        self.size = sum(nlons)
 
     def cell_latitudes(self):  # float[self.size]
         latitudes = np.empty(0)
