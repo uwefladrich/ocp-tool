@@ -1,7 +1,6 @@
 import numpy as np
 
-
-EARTH_RADIUS = 6371e3  # m
+from .earth import RADIUS as EARTH_RADIUS
 
 
 def latband_borders(lats):

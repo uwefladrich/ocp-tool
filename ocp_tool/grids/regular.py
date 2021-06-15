@@ -1,6 +1,6 @@
 import numpy as np
 
-from .gaussian import EARTH_RADIUS
+from .earth import RADIUS as EARTH_RADIUS
 
 
 def _equidistant(start, end, N):
@@ -94,18 +94,18 @@ class LatLonGrid:
 
 
 class RegularLatLonGrid(LatLonGrid):
-    def __init__(self, nlat, nlon, lats_start=-90):
+    def __init__(self, nlat, nlon, first_lat=-90):
         super().__init__(
-            lats=_equidistant(lats_start, -lats_start, nlat),
+            lats=_equidistant(first_lat, -first_lat, nlat),
             lons=_equidistant(0, 360, nlon),
-            lats_start=lats_start
+            first_lat=first_lat
         )
 
 
 class FullGaussianGrid(LatLonGrid):
-    def __init__(self, lats, lats_start=-90):
+    def __init__(self, lats, first_lat=-90):
         super().__init__(
             lats=lats,
             lons=_equidistant(0, 360, 2*len(lats)),
-            lats_start=lats_start
+            first_lat=first_lat
         )
