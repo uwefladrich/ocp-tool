@@ -1,6 +1,6 @@
-from .regular import RegularLatLonGrid
+from .regular import RegularLatLonGrid, FullGaussianGrid
 from .orca import ORCA
-from .gaussian import GaussianGrid, ReducedGaussianGrid
+from .gaussian import ReducedGaussianGrid
 from .ifs_griddes import TCO95, TCO159, TL159, TL255, F128
 
 
@@ -33,8 +33,10 @@ def factory(grid_name, *args, **kwargs):
         )
 
     elif grid_name in full_gaussian_grids:
-        return GaussianGrid(
-            lats=full_gaussian_grids[grid_name].yvals,
+        return FullGaussianGrid(
+            # Note that we want a full Gaussian grid with latitudes starting at
+            # the South pole, hence we have to reverse the FXXX lats
+            lats=full_gaussian_grids[grid_name].yvals[::-1],
         )
 
     elif grid_name in orca_grids:

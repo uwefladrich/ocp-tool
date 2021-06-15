@@ -48,56 +48,6 @@ def equidist_lon_borders(nlon):
     return borders
 
 
-class GaussianGrid:
-    '''A full Gaussian grid defined by a list of latitude bands and
-    equidistributed longitude bands.
-    '''
-    def __init__(self, lats):
-        self.lats = np.array(lats)
-        self.nlats = len(self.lats)
-        self.nlons = 2*self.nlats
-
-    def cell_latitudes(self):
-        return np.tile(self.lats, (self.nlons, 1)).T
-
-    def cell_longitudes(self):
-        return np.tile(equidist_lons(self.nlons), (self.nlats, 1))
-
-    def cell_corners(self):
-        '''
-        Corner layout:
-        +---------------> i
-        |  1 ---------- 0
-        |  |            |
-        |  |            |
-        |  |            |
-        |  2 -----------3
-        v
-        j
-        '''
-        border_lats = latband_borders(self.lats)
-        c_lat = np.empty((4, self.nlats, self.nlons))
-        c_lat[0, :, :] = np.tile(border_lats[:-1], (self.nlons, 1)).T  # north
-        c_lat[1, :, :] = np.tile(border_lats[:-1], (self.nlons, 1)).T  # north
-        c_lat[2, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
-        c_lat[3, :, :] = np.tile(border_lats[1:], (self.nlons, 1)).T  # south
-
-        border_lons = equidist_lon_borders(self.nlons)
-        c_lon = np.empty((4, self.nlats, self.nlons))
-        c_lon[0, :, :] = np.tile(border_lons[1:], (self.nlats, 1))  # east
-        c_lon[1, :, :] = np.tile(border_lons[:-1], (self.nlats, 1))  # west
-        c_lon[2, :, :] = np.tile(border_lons[:-1], (self.nlats, 1))  # east
-        c_lon[3, :, :] = np.tile(border_lons[1:], (self.nlats, 1))  # west
-
-        return np.array([c_lat, c_lon])
-
-    def cell_areas(self):
-        return np.tile(
-            latband_areas(self.lats)/self.nlons,
-            (self.nlons, 1)
-        ).T
-
-
 class ReducedGaussianGrid:
     '''An reduced Gaussian Grid, defined by a list of latitude bands and a
     number of equidistant lonitude segments for each latitude band.
