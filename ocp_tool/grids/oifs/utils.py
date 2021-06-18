@@ -32,6 +32,7 @@ def griddes_read(filename):
         xvals     = lambda s: [*map(float, s.split())],  # list of floats
         yvals     = lambda s: [*map(float, s.split())],
         reducedpoints = lambda s: [*map(int, s.split())],  # list of ints
+        rowlon    = lambda s: [*map(int, s.split())],  # list of ints
     )
 
     cfg = configparser.ConfigParser()
@@ -59,4 +60,3 @@ def griddes_read(filename):
 
 def namedtuple_from_dict(name, dict_):
     return namedtuple(name, dict_.keys())(**dict_)
-
